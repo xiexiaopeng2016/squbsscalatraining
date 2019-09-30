@@ -1,12 +1,12 @@
-# Akka Scala/squbs Training
+# Akka Scala/squbs培训
 
-## Day1: Your first Actors
+## Day1: 您的第一个Actor
 
-### Create Status Enum and Message Classes
+### 创建状态枚举和消息类
 
-1. Create new Scala class `PaymentActor`
+1. 创建新的Scala类`PaymentActor`
 
-2. In the same file as `PaymentActor`, create case objects for `PaymentStatus`
+2. 在与`PaymentActor`相同的文件中, 为`PaymentStatus`创建案例对象
 
    ```scala
    sealed trait PaymentStatus
@@ -15,7 +15,7 @@
    case object Rejected extends PaymentStatus
    ```
 
-3. Create case classes `RecordId`, `PaymentRequest`, and `PaymentResponse`. Note that amounts are of type `Long` and includes the two decimal points. Divide by 100D to get the actual dollar amount.
+3. 创建样例类`RecordId`，`PaymentRequest`和`PaymentResponse`。请注意，金额是`Long`类型的，包括两个小数点。 除以100D得到实际的美元金额。
    
    ```scala
    case class RecordId(id: Long, creator: Long, creationTime: Long = System.currentTimeMillis)   
@@ -23,9 +23,9 @@
    case class PaymentResponse(id: RecordId, requestId: RecordId, status: PaymentStatus)
    ```
 
-### Create our Fundamental Actor
+### 创建基本Actor
 
-We'll expand on this actor a bit later. So lets start with something very basic:
+稍后我们将展开这actor。因此，让我们从一个非常基本的东西开始：
 
 ```scala
 class PaymentActor extends Actor with ActorLogging {
@@ -43,11 +43,11 @@ class PaymentActor extends Actor with ActorLogging {
 }
 ```
 
-So far our actor is not doing a lot. It receives a message for a payment and just logs. Nothing very useful. But at least we have a running actor.
+到目前为止，我们的actor做得并不多。它会收到一条付款消息，并输出日志。虽然没什么用处，但至少我们有一个运行的actor。
 
-### Register Your Actor
+### 注册你的Actor
 
-So that squbs automatically starts the actor. Add your actor to your cube project's `src/main/resources/META-INF/squbs-meta.conf`.
+这样squbs会自动启动actor。将actor添加到cube项目的`src/main/resources/META-INF/squbs-meta.conf`文件。
 
 ```
 cube-name = com.paypal.myorg.myservcube
@@ -60,11 +60,11 @@ squbs-actors = [
 ]
 ```
 
-### Testing Your Actor
+### 测试你的Actor
 
-1. Create folder `scala` under src/test.
-2. Under `src/test/scala`, create package with the same name as the package containing your actor.
-3. Create the test file `PaymentActorSpec` with a simple call to the actor as follows:
+1. 在`src/test`下面创建`scala`文件夹。
+2. 在`src/test/scala`下面，创建与包含您的actor的包同名的包。
+3. 创建测试文件`PaymentActorSpec`，简单地调用actor，如下所示:
 
    ```scala
    import akka.actor.{ActorSystem, Props}
@@ -88,18 +88,18 @@ squbs-actors = [
      }
    }
    ```
+	 
+	 这个`PaymentActorSpec`混入扩展了Akka TestKit，并增加了以下一些特质：
+   * `FlatSpecLike` 使用`FlatSpec`样式定义测试的样式
+   * `Matchers` 启用S​​calaTest的匹配器DSL，我们将在后面使用 
+   * `ImplicitSender` 在测试内部提供一个发送者，用于测试actor响应发送者	
+	 
+4. 在编辑器中右键单击测试类名称`PaymentActorSpec`，然后从弹出菜单中选择选项`Run 'PaymentActorSpec'`。查看测试结果。由于我们的actor没有执行验证仅进行日志输出，因此我们可以通过查看日志来观察正在运行。我们将在下一步中添加断言。
+5. 如果启用了工具栏，则会在可以运行的项目列表中看到`PaymentActorSpec`。选择测试，然后按`>`图标在以后的时间开始测试。由于我们的actor除了输出日志外什么都不做，因此我们可以通过查看日志来观察它的运行情况。
 
-   The `PaymentActorSpec` mixes extends the Akka TestKit and adds in a few traits as follows:
-   * `FlatSpecLike` defines the style of the test to use a `FlatSpec` style
-   * `Matchers` enables ScalaTest's matcher DSL we'll use later
-   * `ImplicitSender` provides a sender within the test for test actors to respond to
-   
-8. Right-click on your test class name `PaymentActorSpec` in the editor and select option `Run 'PaymentActorSpec'` from the pop-up menu. See your test results. Since our actor does no validations but only logs, we can observe it running by looking at the logs. We'll add assertions in the next step.
-9. If you enabled the toolbar, you'll see `PaymentActorSpec` in list of items you can run. Select the test and press the `>` icon to start the test at any future time. Since our actor does nothing but log, we can observe it running by looking at the logs.
+### 让Actor发回PaymentResponse
 
-### Make the Actor send PaymentResponse back
-
-1. Edit `PaymentActor` and add the following lines:
+1. 编辑`PaymentActor`并添加以下行:
 
    ```scala
        case PaymentRequest(requestId, payerAcct, payeeAcct, amount) =>
@@ -110,7 +110,7 @@ squbs-actors = [
          // ^^^ Add these two line here ^^^
    ```
 
-2. Since `PaymentActor` now responds with a message, lets update our test to obtain response messages and validate its status.
+2. 由于`PaymentActor`现在响应了一个消息，因此请更新测试以获取响应消息并验证其状态。
    
    ```scala
      "The Payment Actor" should "react to payment requests" in {
@@ -126,11 +126,11 @@ squbs-actors = [
      }
    ```
 
-### Qualifying Messages
+### 限定消息
 
-Sometimes we want to treat different messages arriving a bit different. For instance, a cafeteria payment of $12 or less should just be auto-approved. So lets add another case pattern matching.
+有时我们想区别对待达到的不同消息。例如，在自助餐厅支付$12美元或以下的金额应自动获得批准。因此，让我们添加另一个样例模式匹配。
 
-**Note:** This case needs to be added above the current case as the pattern matching is done in sequence. This case is more specific than the existing one.
+**注意:** 这种情况需要添加在当前情况之前，因为模式匹配是按顺序完成的。这种情况比现有情况更具体。
 
 ```scala
     case PaymentRequest(requestId, payerAcct, payeeAcct, amount) if amount < 1200 =>
@@ -141,9 +141,9 @@ Sometimes we want to treat different messages arriving a bit different. For inst
       ...
 ```
 
-This matcher has an added qualifier testing that the amount is less than 1200, or $12.00 and it will immediately respond with an `Approved` status.
+此匹配器添加了一个限定符测试，该测试值小于1200，即$12.00，它将立即以`Approved`状态响应。
 
-Lets also add a test to see this in action. In the test, add another test.
+让我们还添加一个测试以查看实际效果。在测试中，添加另一个测试。
 
 ```scala
   "The Payment Actor" should "approve small payment requests automatically" in {
@@ -154,19 +154,19 @@ Lets also add a test to see this in action. In the test, add another test.
   }
 ```
 
-Now run the test again. It should just pass. Also note the log messages.
+现在再次运行测试。它应该通过了。另请注意日志消息。
 
-### Creating a Child Actor
+### 创建子Actor
 
-Remember, based on the Actor Model of Computation, an actor, upon receiving a message can do one or more of these three:
+请记住，基于Actor计算模型，Actor在收到消息后可以执行以下三个操作中的一项或多项：
 
-* Send messages
-* Create other actors
-* Change state/behavior to be used by next message
+* 发送信息
+* 创建其它actor
+* 更改下一条消息要使用的状态/行为
 
-Now, lets explore the second property: Creating another child actor. Note that this actor becomes the parent of this child actor.
+现在，让我们探索第二个属性：创建另一个子actor。请注意，此actor成为该子actor的父级。
 
-Now we create another actor, the `RiskAssessmentActor`. In this case we'll let it approve every request, just for simplicity. Here is the code:
+现在，我们创建另一个actor`RiskAssessmentActor`。在这种情况下，为简单起见，我们让它批准每个请求。这是代码：
 
 ```java
 class RiskAssessmentActor extends Actor with ActorLogging {
@@ -186,9 +186,9 @@ class RiskAssessmentActor extends Actor with ActorLogging {
 }
 ```
 
-By itself, there is nothing interesting about `RiskAssessmentActor`. It is similar to `PaymentActor` in many ways. But now we'll let `PaymentActor` forward the approval request to `RiskAssessmentActor` and then return it to the client, which is the test code.
+就其本身而言，`RiskAssessmentActor`没有什么有趣的。它在很多方面都类似于`PaymentActor`。但是现在，我们让`PaymentActor`将批准请求转发给`RiskAssessmentActor`，然后将其返回给客户端，以下是测试代码。
 
-Lets enhance the `PaymentActor` to do so. We'll modify the current high risk payment code to do the forward as follows:
+为此，让我们增强`PaymentActor`。我们将修改当前的高风险支付代码，以进行转发，如下：
 
 ```java
     case request @ PaymentRequest(requestId, payerAcct, payeeAcct, amount) =>
@@ -202,7 +202,7 @@ Lets enhance the `PaymentActor` to do so. We'll modify the current high risk pay
       // ^^^ Add these two lines here ^^^
 ```
 
-Notice now the client should receive two messages. One with `Accepted` status and one with `Approved` status. So lets modify our first test.
+注意现在客户端应该收到两条消息。一种带有`Accepted`状态，另一种带有`Approved`状态。因此，让我们修改我们的第一个测试。
 
 ```scala
   "The Payment Actor" should "react to payment requests" in {

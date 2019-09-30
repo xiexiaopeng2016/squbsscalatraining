@@ -1,10 +1,12 @@
-## Day 2: Advanced Actors
+## Day 2: 高级Actor
 
-### Using `ask`
+### 使用`ask`
 
-So far we have learned about `tell`, the fire-and-forget sender, and `forward`. There is another way to send an actor a message and expect a response back, even in production and not test code, by using `ask`. Lets add another test using just this to `PaymentActorSpec`:
+到目前为止，我们已经了解了`tell`,发送者"即发即弃"和`forward`。还有一种方法可以通过发送一条消息给actor并期望返回响应，即使在生产环境中而不是测试代码中，使用`ask`。让我们为`PaymentActorSpec`添加另一个测试：
 
-First we need to deal with a few imports:
+首先，我们需要处理一些导入：
+
+There is another way to send an actor a message and expect a response back, even in production and not test code, by using `ask`. Lets add another test using just this to `PaymentActorSpec`:
 
 ```scala
 import akka.pattern._
@@ -12,16 +14,16 @@ import org.scalatest.concurrent.ScalaFutures
 import scala.concurrent.duration._
 ```
 
-The `import akka.pattern._` enables the use of the ask `?`, and `maptTo` we'll discuss below. And since ask deals with Scala `Future`s the `ScalaFutures` trait above helps with testing futures. The `scala.concurrent.duration._` import provides convenient ways to deal with time, like `3.seconds` in the example below.
+`import akka.pattern._`导入了 ask `?`和`mapTo`，我们将在下面讨论。而且由于Ask使用Scala `Future`处理，上述`ScalaFutures`特质有助于测试future。该`scala.concurrent.duration._`导入提供了方便的方式来处理时间，比如下面的例子的`3.seconds`。
 
-In addition, we have to mix the `ScalaFutures` trait into the test class:
+另外，我们必须将`ScalaFutures`特质混入到测试类中：
 
 ```scala
 class PaymentActorSpec extends TestKit(ActorSystem("PaymentActorSpec"))
   with FlatSpecLike with Matchers with ImplicitSender with ScalaFutures {
 ```
 
-Then the test itself:
+然后测试本身：
 
 ```scala
   "The Payment Actor" should "approve small payment requests through ask automatically" in {
@@ -33,22 +35,22 @@ Then the test itself:
   }
 ```
 
-Wow, this looks really short. Lets cover this test case using ask one-by-one:
+哇，这看起来很短。让我们使用一个接一个的ask来涵盖这个测试案例：
 
-1. We set a timeout, implicitly. Since ask `?` returns a future, we cannot wait for this future indefinitely. The timeout tells how long ask should wait. The `3.seconds` ge=ot converted to the `Timeout` type implicitly, too.
-2. The ask, or `?` itself. Since our actors are not typed, it won't know what the response type of the `PaymentActor` would be. So it returns a `Future[Any]`
-3. `.mapTo[PaymentResponse]` casts the `Future`s value to the target type.
-4. The `futureValue` operation we use in the validation is a facility provided by ScalaTest's `ScalaFutures` trait. It does indeed block. But by using a ScalaTest trait here we ensure that such blocking code would only be confined to tests and does not leak into production code. Production code does not have access to ScalaTest.
+1. 我们隐式设置了超时。由于 ask `?` 返回一个future, 所以我们不能无限期地等待这个future。超时表明应该等待ask多长时间。`3.seconds`隐式转换为`Timeout`类型。
+2. ask或`?`本身。由于我们的actor是无类型的, 因此它将不知道`PaymentActor`的响应类型是什么。所以它返回一个`Future[Any]`
+3. `.mapTo[PaymentResponse]`将`Future`值转换为目标类型。
+4. 我们在验证中使用的`futureValue`操作是ScalaTest的`ScalaFutures`特质提供的功能。它确实会阻塞。但是，通过在此处使用ScalaTest特性，我们可以确保将此类阻塞代码仅限制在测试中，而不会泄漏到生产代码中。生产代码无权访问ScalaTest。
 
-The `Future` may succeed or fail. To signal a failure to an `ask`, the actor must respond back with a `akka.actor.Status.Failure`. Lets try that with our `matchAny` case. Modify `PaymentActor`'s `matchAny` to send back a `Failure` when that case is matched:
+`Future`可能成功也可能失败。要向一个`ask`发出失败信号，actor必须用一个`akka.actor.Status.Failure`回应。让我们在`matchAny`用例中尝试一下。修改`PaymentActor`的`matchAny`，用于在用例匹配时发回一个`Failure`：
 
-Once again, the import:
+再一次，这个导入：
 
 ```scala
 import akka.actor.Status
 ```
 
-Then in the `PaymentActor` modify the `matchAny` to be as follows:
+然后在`PaymentActor`中修改`matchAny`为如下：
 
 ```scala
     case o =>
@@ -57,7 +59,7 @@ Then in the `PaymentActor` modify the `matchAny` to be as follows:
       // ^^^ This line added ^^^
 ```
 
-Lets try this out in our test. Lets add a test that checks for such failure to `PaymentActorSpec`:
+让我们在测试中尝试一下。让我们在`PaymentActorSpec`添加一个测试来检查这种失败：
 
 ```scala
   "The Payment Actor" should "fail the future with the right exception" in {
@@ -67,18 +69,18 @@ Lets try this out in our test. Lets add a test that checks for such failure to `
   }
 ```
 
-The only notable part of this test is that we use the `.failed` projection of a `Future` to validate the future has failed with a certain exception.
+该测试的唯一值得注意的部分是，我们使用的`.failed`投射一个`Future`来验证一个已经失败的future具有某一个异常。
 
-### Changing Actor Behavior
+### 改变actor的行为
 
-Now we come to the last property of actors. It can change behavior based on a message. Lets try having an `offline` behavior for our actors. If we send an `Offline` message to our `PaymentActor`, it will only send an error back. Once we send an `Online` message to the actor, it will start resume processing. Here we change the state of the actor to off-line and have it behave differently in offline mode. For that, we need our `Offline` and our `Online` messages first. Lets also make them singletons to save on any GC cost. They are just signals and don't contain state.
+现在我们来谈谈actor的最后一个属性。它可以根据消息更改行为。让我们尝试让actor有`offline`行为。如果我们发送一个`Offline`消息给`PaymentActor`，它只会发回一个错误。一旦我们发送一个`Online`消息给actor，它将开始恢复处理。在这里，我们将actor的状态更改为脱机，并使其在脱机模式下的行为有所不同。为此，我们首先需要`Offline`和`Online`信息。同时让它们成为单例以节省任何GC成本。它们只是信号，不包含状态。
 
 ```scala
 case object Offline
 case object Online
 ```
 
-Next, lets add a Receive matcher to our `PaymentActor` to build the offline behavior. This is a final variable to our receive and should never change:
+接下来，让我们向`PaymentActor`添加一个接收匹配器以构建离线行为。这是我们接收的final变量，不应更改：
 
 ```scala
   def offlineBehavior: Receive = {
@@ -94,7 +96,7 @@ Next, lets add a Receive matcher to our `PaymentActor` to build the offline beha
   }
 ```
 
-Add the receive match for `Offline` to take this actor to its `offlineBehavior`. This match can go anywhere before the `rcvBuilder.matchAny`:
+为`Offline`添加接收匹配，用于该actor切换到`offlineBehavior`。这个匹配可以在`rcvBuilder.matchAny`之前进行：
 
 ```scala
     case Offline =>
@@ -102,9 +104,9 @@ Add the receive match for `Offline` to take this actor to its `offlineBehavior`.
       sender() ! Offline
 ```
 
-The `context.become(...)` call moves the actor to `offlineBehavior`. And we can see in the `offlineBehavior` the `context.unbecome()` will set the behavior back to original. If the `discardOld` parameter to `context.become(...)` is set to `true`, we can only keep shifting to new behavior. This is to prevent memory leaks caused by behavior change.
+该`context.become(...)`调用切换actor到`offlineBehavior`。我们可以看到在`offlineBehavior`，`context.unbecome()`将行为设置回到原来的。如果将`context.become(...)`的`discardOld`参数设置为`true`，我们只能继续保持转换到新行为。这是为了防止由于行为更改而引起的内存泄漏。
 
-Lets build a test for this. This test is a bit longer, though. It checks the behavior before going off-line, while off-line, and after coming back on-line. Here is the test code:
+让我们为此构建一个测试。不过，此测试要更长一些。它将在脱机之前，脱机期间以及返回联机之后检查行为。这是测试代码：
 
 ```scala
   "The Payment Actor" should "respond only with `Offline` while offline" in {
@@ -135,19 +137,19 @@ Lets build a test for this. This test is a bit longer, though. It checks the beh
   }
 ```
 
-### Stashing Messages
+### 存储消息
 
-In some cases we don't just want to say we're offline. We want to stash the received messages till we're back online and deal with them at that time. This is often used in actors that act as caches. There is a short time while loading/reloading caches we just want to hold onto requests until our data is fully loaded.
+在某些情况下，我们不只是想说我们处于离线状态。我们希望将收到的消息存储起来，直到我们重新联机并在那时进行处理。通常用在充当缓存的actor中。加载/重新加载缓存的时间很短，我们只想保留请求直到数据完全加载。
 
-For this exercise, we're going to replace some logic we have built. In order to deal with this scenario, we want to make a copy of our `PaymentActor` into a new class called `StashingPaymentActor`. You'll need to copy and modify all references to `PaymentActor` to `StashingPaymentActor`.
+对于本练习，我们将替换一些已建立的逻辑。为了处理这种情况，我们想将`PaymentActor`复制到名为`StashingPaymentActor`的新类中。你需要将`PaymentActor`的所有引用复制和修改为`StashingPaymentActor`。
 
-We will then mix in the `Stash` trait to our `StashingPaymentActor`:
+然后，我们将`Stash`特质混入到我们的`StashingPaymentActor`：
 
 ```scala
 class StashingPaymentActor extends Actor with Stash with ActorLogging {
 ```
 
-Next lets go to the `offlineBehavior` and make it stash the messages instead of just sending an off-line response. Similarly, we need to unstash everything at the time we go back on-line.:
+接下来，转到`offlineBehavior`并使其存储消息，而不只是发送脱机响应。同样，我们需要在重新联机时取消所有存储。
 
 ```scala
   def offlineBehavior: Receive = {
@@ -166,11 +168,11 @@ Next lets go to the `offlineBehavior` and make it stash the messages instead of 
   }
 ```
 
-Then we want to handle all stashed messages when we get back online.
+然后，当我们重新联机时，我们想处理所有存储的消息。
 
-Now it should all work. Similarly, we want to make a copy of `PaymentActorSpec` into `StashingPaymentActorSpec` to make the test modifications.
+现在它应该一切正常。同样的，我们要将`PaymentActorSpec`拷贝到`StashingPaymentActorSpec`用于测试修改。
 
-We'll now modify the `testOffline()` method to test the stashing behavior. Here is is our new `testOffline()` method in `StashingPaymentActorSpec`:
+现在，我们将修改`testOffline()`方法以测试存储行为。这是我们在`StashingPaymentActorSpec`中的新`testOffline()`方法：
 
 ```scala
   "The Payment Actor" should "respond only with `Offline` while offline" in {
@@ -208,20 +210,20 @@ We'll now modify the `testOffline()` method to test the stashing behavior. Here 
   }
 ```
 
-### Actor Lifecycle
+### Actor生命周期
 
-An actor keeps on living, until they are sent a `PoisonPill`, call `getContext().stop(self())` internally, or `getContext().stop(actorRef)` externally.
+actor一直活着，直到在内部调用`getContext().stop(self())`或在外部调用`getContext().stop(actorRef)`向其发送了一个`PoisonPill`。
 
-It is important to terminate actors when no longer in use. If we keep creating actors and not terminate them, we have a memory leak.
+当不再使用actor时，终止actor很重要。如果我们持续创建actor而不终止它们，则会发生内存泄漏。
 
 ![Image showing actor lifecycle](https://doc.akka.io/docs/akka/current/images/actor_lifecycle.png)
 
-### What we have not covered
+### 我们没有涵盖的内容
 
-* Piping results from async operations
+* 异步操作产生的管道
 * FSM
-* Supervisor Policy
+* 监督策略
 
-Please do read up on these in your own time.
+请您自己阅读这些内容。
 
-Now we are done with Actors. Yeah!
+现在我们已经完成了Actor。是啊！

@@ -1,19 +1,19 @@
-## Day 3: Intro to Akka Streams
+## Day 3: Akka Streams简介
 
-### Core Concepts
+### 核心概念
 
-* Source - Source stream components
-* Flow - Processing components
-* Sink - End stream components
-* Materializer - Engine that makes the stream tick
-* Materialized Values - The resulting value of a stream
-* Back-pressure
+* Source - 来源流组件
+* Flow - 处理组件
+* Sink - 接收流组件
+* Materializer - 使流滴答作响的引擎(Engine that makes the stream tick)
+* Materialized值 - 流的结果值
+* 背压
 
-### Writing your First Stream
+### 编写您的第一个流
 
-We start with writing our first, very simple stream. Again, we'll expand on this first application later to build a more sophisticated, and more useful stream. You do not necessarily have to build a stream inside an `Actor`, but we will as well start with that.
+我们从编写第一个非常简单的流开始。同样，稍后我们将在第一个应用程序上进行扩展，以构建更复杂，更有用的流。您不一定必须在`Actor`中建立流，但我们也将从这开始。
 
-Create Scala class `PaymentStreamActor` into your package of choice under `src/main/scala` of your cube project with the following content:
+在你的cube项目的`src/main/scala`路径下的所选包中创建Scala类`PaymentStreamActor`，其内容如下：
 
 ```scala
 import akka.actor.{Actor, ActorLogging}
@@ -34,7 +34,7 @@ class PaymentStreamActor extends Actor with ActorLogging {
 }
 ```
 
-And to make it tick, we also want to write our test code. Create `PaymentStreamSpec` into your package of choice under `src/test/scala` of your cube project with the following content:
+为了使它滴答(tick)，我们还希望编写测试代码。在你的cube项目的`src/test/scala`路径下所选包内创建`PaymentStreamSpec`, 并添加以下内容：
 
 ```scala
 import akka.actor.{ActorSystem, Props}
@@ -56,11 +56,11 @@ class PaymentStreamSpec extends TestKit(ActorSystem("PaymentStreamSpec"))
 }
 ```
 
-Right-click on your test class name `PaymentStreamSpec` in the editor and select option `Run 'PaymentStreamSpec'` from the pop-up menu. See your test results. Since our actor does no validations but only logs, we can observe it running by looking at the logs. You should see it logging the numbers 1 to 100. You got your first stream!
+在编辑器中右击测试类名称，然后从弹出菜单中选择`Run 'PaymentStreamSpec'`选项。查看测试结果。由于我们的actor没有执行任何验证, 仅输出了日志，因此我们可以通过查看日志来观察到其正在运行。您应该会看到它输出了1到100的数字。你得到了你的第一个流!
 
-### Adding the Sink
+### 添加Sink
 
-So far, we used a shortcut method `runForeach` that installs a sink and just runs it in one shot. There are a lot of such shortcut methods in Akka Steams to make sure you do not have to write more code than needed. But now lets make it all very clear. Add a sink just below where the source was declared:
+到目前为止，我们使用了一种快捷方式方法`runForeach`来安装一个sink，然后一次性运行它。Akka Steams中有很多这样的快捷方法，以确保您不必编写过多的代码。但现在让我们把一切变得非常清楚。在声明源的下面添加一个sink：
 
 ```scala
   val src = Source(1 to 100)
@@ -68,7 +68,7 @@ So far, we used a shortcut method `runForeach` that installs a sink and just run
   // Add this line ^^^^^^^^^^
 ```
 
-Next we also want to formalize the run a bit better for our own understanding. Lets re-write the `run()` method to be as followings:
+接下来，为了便于理解，我们还想将run变得更正式。让我们将`run()`方法重写如下：
 
 ```scala
   private def run() = {
@@ -77,11 +77,11 @@ Next we also want to formalize the run a bit better for our own understanding. L
   }
 ```
 
-Here we can now see that we essentially create a runnable stream graph `RunnableGraph` where we don't care about the materialized value.
+在这里，我们现在可以看到，我们基本上创建了一个可运行的流图`RunnableGraph`，在这里我们忽略物化(materialized)值。
 
-### Adding a Flow component
+### 添加流组件
 
-Now that we have the source and sink components, lets add some processing to the middle of the stream. First we'll only take our even numbers using the filter. Lets create a filtering flow:
+现在我们有了源和接收组件，让我们在流的中间添加一些处理。首先，我们仅使用过滤器获取偶数。让我们创建一个过滤流程：
 
 ```scala
   val src = Source(1 to 100)
@@ -90,16 +90,16 @@ Now that we have the source and sink components, lets add some processing to the
   val sink = Sink.foreach[Int](log.info("Count: {}", _))
 ```
 
-Then lets put our filter to work. Modify our `run()` method as follows:
+然后，让我们的过滤器开始工作。修改我们的`run()`方法，如下所示：
 
 ```scala
     val stream = src.via(filter).to(sink)
     stream.run()
 ```
 
-And run it again. Now you'll notice half the numbers are no longer printed.
+并再次运行。现在，您会发现一半的数字不再打印。
 
-We can also add another stream component, another flow, to calculate the square of each number. Lets do so.
+我们还可以添加另一个流处理组件，用于计算每个数字的平方。让我们这样做。
 
 ```scala
   val filter = Flow[Int].filter(_ % 2 == 0)
@@ -108,41 +108,41 @@ We can also add another stream component, another flow, to calculate the square 
   val sink = Sink.foreach[Int](log.info("Count: {}", _))
 ```
 
-Language note: We have been using the shortcut `_` meaning "it" in the `filter`, but we use the full form in the `map`. The shortcut does not serve us well in this case. While we can see some cases in the Scala language using `(_ * _)`, the meaning is different. The first `_` means first input to the closure while the second `_` is the second input. In the shortcut form, each input can only be used only once. Since we do not follow this rule, we need to use the full closure form `(i => i * i)`
+语言说明：我们一直在`filter`中使用快捷方式`_`，意为"it"，但在`map`中使用了完整形式。在这种情况下，快捷方式不能很好地为我们服务。虽然我们可以看到Scala语言中的某些情况使用`(_ * _)`，但含义有所不同。第一个`_`表示闭包的第一个输入，第二个`_`表示第二个输入。在快捷方式中，每个输入只能使用一次。由于我们不遵循此规则，因此需要使用完整的闭包格式`(i => i * i)`
 
-Then we also add the `square` to the stream.
+然后，我们还将`square`添加到流中。
 
 ```scala
   val stream = src.via(filter).via(square).to(sink)
 ```
 
-And just run it. Well, there is nothing unexpected to the results.
+并运行它。嗯，结果并没有什么出人意料的。
 
-Here we just created two separate flow components and then composed them together. We could as well define all these as a single component, such as:
+在这里，我们只是创建了两个单独的流处理组件，然后将它们组合在一起。我们也可以将所有这些都定义为单个组件，例如：
 
 ```scala
   val squareEven = Flow[Int].filter(_ % 2 == 0).map(i => i * i)
 ```
 
-This definitely works. But the filter and square components are no longer easily re-usable. It may be worth grouping some complex logic together this way, though.
+这个绝对是可行的。但是过滤器和平方组件不再容易重复使用。不过，以这种方式将一些复杂的逻辑组合在一起可能是有价值的。
 
-But, we have just learned one more thing. A stream is not always one in and one out. On the contrary, the number of elements might shrink (with `filter`) or might grow from processing stage to processing stage (for instance, with `mapConcat` or `flatMapConcat` stages).
+但是，我们又学到了一件事。流并不总是进一个就会出一个。相反，元素的数量可能会缩小(带有`filter`)，或者可能会在处理阶段之间增加(例如，带有`mapConcat`或`flatMapConcat`阶段)。
 
-### Stream Components are Re-usable
+### 流组件是可重复使用的
 
-In the later examples, you can clearly see we have separated the declaration of the stream to the running of the stream with the `stream.run()`.
+在后面的示例中，您可以清楚地看到我们分开了流的声明和流的运行`stream.run()`。
 
-It is to be noted that each of the stream components by themselves are reusable. They can be shipped around in any form, returning from a method call, sent around via actor messages, etc. These logic components can then be composed into the final runnable form and run just about anywhere. Even the final `RunnableGraph` is reusable and can be shipped around. We can think of them as templates of stream logic that is being shipped around and manipulated until finally they get to run via the `run` command. The `src.runForeach` call we had in the beginning is just a shortcut of all this.
+要注意的是，每个流组件本身都是可重用的。它们可以以任何形式传输，从方法调用返回，通过actor消息发送等。然后，这些逻辑组件可以组成最终的可运行形式，并可以在任何地方运行。甚至最终`RunnableGraph`也可以重复使用，并且可以被传输。我们可以将它们视为流逻辑的模板，它们将被传输和操纵，直到最终通过`run`命令运行。我们一开始的`src.runForeach`调用只是所有这一切的捷径。
 
-### Stream Composition & Componentization
+### Stream组合&组件化
 
-Stream components are composable to build more complex components. Each of them can then be shipped around and built into a final `RunnableGraph`. It is important to understand the result types of such composition, though.
+流组件可组成更复杂的组件。它们中的每一个都可以被传送并构建成一个最终的`RunnableGraph`。不过，了解这种组合的结果类型很重要。
 
 * `Source ~> Flow` ==> `Source`
 * `Flow ~> Flow` ==> `Flow`
 * `Flow ~> Sink` ==> `Sink`
 
-Lets try out some declarations here. Note: We show the type annotations to clearly display the resulting types of the composition. In your code, this can be inferred by the Scala compiler and may not be needed:
+让我们在这里尝试一些声明。注意：我们显示类型注释以清楚显示组合的结果类型。在您的代码中，这可以由Scala编译器推断出来，可能不需要：
 
 ```scala
   val filteredSource: Source[Int, NotUsed] = src.via(filter)
@@ -155,13 +155,13 @@ Lets try out some declarations here. Note: We show the type annotations to clear
   val squareAndLogMat: Sink[Int, Future[Done]] = square.toMat(sink)(Keep.right)
 ```
 
-Each of these now become more complex stream components that also can be shipped around and re-used. This is very handy in declaring and composing more and more complex components that will become part of the main flow.
+现在，它们中的每一个都变成了更复杂的流组件，也可以被传送和重用。这对于声明和组合越来越复杂的组件非常方便，它们将成为主流程的一部分。
 
-Language note: You will notice two sets of arguments to `square.toMat`. The first is sink, separated by a different parenthesis from `Keep.right`. This is called "currying" and is often used in functional languages. In essence, passing `sink` to `toMat` creates another function that takes the `Keep` value to produce a real `Sink`. A function that returns another function.
+语言说明：您会注意到`square.toMat`的两组参数。第一个是接收器，与`Keep.right`用不同的括号分隔。这称为"柯里化"，通常用于功能语言中。本质上，传递`sink`给`toMat`创建另一个函数，该函数采用`Keep`值来产生一个实际的`Sink`。一个函数返回另一个函数。
 
-### Materialized Value
+### 物化值(Materialized Value)
 
-The materialized value is the resulting value of a stream when it runs. In our examples so far, we really did not care about the materialized value just yet. but lets say we wanted to calculate the sum of squares as a result of the stream, we can do the `log` as a map stage separately. Then we can have a sink that sums it. Lets do that:
+物化值是流运行时的结果值。到目前为止，在我们的示例中，我们还真的不在乎物化价值。但是可以说，我们要计算流的平方的和，我们可以分别地将映射阶段`log`。然后，我们可以将其相加。让我们这样做：
 
 ```scala
   val logFlow = Flow[Int].map { i =>
@@ -172,19 +172,19 @@ The materialized value is the resulting value of a stream when it runs. In our e
   val sum = Sink.reduce[Int](_ + _)
 ```
 
-Language notes:
+语言说明:
 
-* In this `map` example, you see the use of curly braces `{` and `}`. In Scala, these curly braces mean the same as normal braces `(` and `)` except they can be used for multi-line closures as you can see here. The last expression `i` is the return value of that closure.
-* Here you see the reduce example using the closure `(_ + _)`. This expands to `((a, b) => a + b)`. The second `_` represents the second input value, and so on. That makes it very simple to write and read `reduce` or `fold` closures. When it gets any more complex, use the standard and not this shortcut closure syntax.
+* 在此`map`示例中，您将看到花括号`{`和`}`的用法。在Scala中，这些花括号的含义与普通括号相同`(`和`)`，不同的是，它们可以用于多行闭包，如您在此处看到的。最后一个表达式`i`是该闭包的返回值。
+* 在这里，您可以看到使用闭包的reduce示例`(_ + _)`。扩展为`((a, b) => a + b)`。第二个`_`代表第二个输入值，依此类推。这使得编写和读取`reduce`或`fold`闭包非常简单。如果变得更加复杂，请使用标准而不是此快捷方式闭包语法。
 
-Then our run method will just be like this:
+然后我们的运行方法将如下所示：
 
 ```scala
     val stream = src.via(filter).via(square).via(logFlow).toMat(sum)(Keep.right)
     stream.run()
 ```
 
-Hold on, we just summed up the result of the stream. But where did it go? Of course, that sum would only be available once the stream is done running. That's why we get a `Future[Int]`. We can wait for that. But remember, waiting **is a crime** in this architecture. So we need to be more creative. We can do many things with that `Future` but for now we want to send it back to the test that asked for it. Lets use one of the actor features we have not covered so far, the `pipeTo`. Lets change our `run` method as follows:
+等等，我们只是总结了流的结果。但是去哪儿了？当然，只有在流完成运行后，该总和才可用。这就是为什么我们得到一个`Future[Int]`。我们可以等待。但是请记住，在这种架构中等待是**一种犯罪**。因此，我们需要更具创造力。我们可以对`Future`做很多事情，但是现在我们想将其发送回询问它的测试中。让我们使用一个目前为止尚未介绍的actor特征`pipeTo`。让我们像下面一样修改`run`方法：
 
 ```scala
   private def run() = {
@@ -193,7 +193,7 @@ Hold on, we just summed up the result of the stream. But where did it go? Of cou
   }
 ```
 
-Now lets change our test case to expect that result back. Go to our test and change it as follows:
+现在让我们更改测试用例， 以期望返回结果。进行测试并进行如下更改：
 
 ```scala
   "The stream actor" should "Accept a ping request" in {
@@ -203,15 +203,15 @@ Now lets change our test case to expect that result back. Go to our test and cha
   }
 ```
 
-We can also now take out the `sleep` at the end. As this test won't quit until it receives the response, we no longer have to compensate for test quitting before the test logic is done.
+我们现在也可以去掉最后的`sleep`。由于此测试在收到响应之前不会退出，因此在测试逻辑完成之前，我们不再需要补偿退出的测试。
 
-Now run the test and have some fun.
+现在运行测试并获得一些乐趣。
 
 ### Graph
 
-So far, we have been dealing only with relatively linear streams. But most applications, stream segments or components cannot be linear. The stream itself does not at all need to be linear. And while it is possible to compose non-linear streams using the current stream syntax, it can become hard to deal with. That's where the stream graph syntax comes in very handy.
+到目前为止，我们仅处理相对线性的流。但是，大多数应用程序，流片段或组件不能是线性的。流本身根本不需要是线性的。虽然可以使用当前流语法组合非线性流，但是处理起来会很困难。这就是流图语法非常方便的地方。
 
-The graph is defined by a GraphDSL, which introduces a certain boilerplate as follows:
+图由GraphDSL定义，它引入了某些样板，如下所示：
 
 ```scala
     val graph = RunnableGraph.fromGraph(GraphDSL.create(sum) { implicit builder =>
@@ -228,20 +228,21 @@ The graph is defined by a GraphDSL, which introduces a certain boilerplate as fo
     })
 ```
 
-The `GraphDSL` block looks a little fuzzy, but well worth it when it comes to the stream graph declaration itself. Lets break it down into the components:
+`GraphDSL`块看起来有点模糊，但是就流图声明本身而言，值得这么做。让我们将其分解为以下组件：
 
-1. The declaration and the factory. The case above shows a `RunnableGraph`, which means this graph is a full template and can be run immediately. However, a `GraphDSL` does not always need to create a `RunnableGraph`. It can as well create a `Flow`, `Source`, or `Sink`. These can again be composed with other components using `GraphDSL` or simple stream operations. To construct a `RunnableGraph` from a `GraphDSL`, you'd construct it with `RunnableGraph.fromGraph(...)`. Similarly, to construct a `Flow`, you'd start with `Flow.fromGraph(...)`. Similar methods exist for `Source.fromGraph(...)` and `Sink.fromGraph(...)`.
+1. 声明和工厂。上面的案例显示了一个`RunnableGraph`，这表示该图是完整的模板，可以立即运行。但是, 一个`GraphDSL`不一定总是需要创建一个`RunnableGraph`。它也可以创造一个`Flow`，`Source`或`Sink`。这些可以再次被其他组件使用`GraphDSL`或简单的流操作来组合。为了从`GraphDSL`构建一个`RunnableGraph`, 你会用`RunnableGraph.fromGraph(...)`构建它。同样，要构建一个`Flow`, 您将从`Flow.fromGraph(...)`开始。存在类似的方法 `Source.fromGraph(...)`和`Sink.fromGraph(...)`。
 
-2. The graph itself is created by `GraphDSL.create(...)`. The `GraphDSL.create(...)` is a highly overloaded method. It can take no arguments to a very large number of arguments. The format shown in this example passes only the `sum` sink in. By doing so, we're saying we want this `RunnableGraph`/`Flow`/`Source`/`Sink` to use the materialized value of `sum` as the materialized value of this graph. If no parameter is passed, the materialized value is simply a `Future[Done]`.
-
-   Life gets more interesting when we pass multiple stream components into `GraphDSL.create(...)` In that case we have multiple materialized value for the graph. This is of course not valid. So we need to pass another closure in called `combineMat`. This lambda will take *n* arguments where *n* is the number of stream stages passed in. The output is then the materialized value based on combining the input materialized values. This allows and enforces developers to define how to produce the final materialized value from the multiple values in question. The easiest case is to create a tuple to return each of the materialized value as part of the result.
-
-   The last argument of the `GraphDSL.create` is the builder lambda. This is a layered lambda, the first one takes the `builder` as an argument. We need to mark this builder `implicit` to be used further below in the graph. The next lambda in takes an imported version of the stream stages passed into `GraphDSL.create`. For instance, if you have 3 stages passed in, you'll have 3 inputs in this lambda representing those imported stages. These will be used to compose the stream graph. In this case the `out` represents the `sum` passed in.
+2. 图本身是由`GraphDSL.create(...)`创建的。`GraphDSL.create(...)`是一个高度重载的方法。它可以不接受不带任何参数到接受非常多的参数。在这个例子中显示的格式，只接收传递`sum`。通过这样做，我们说我们希望这个`RunnableGraph`/`Flow`/`Source`/`Sink`使用`sum`的物化值, 作为这个图的物化值。如果未传递任何参数，则物化值只是一个`Future[Done]`。
+	 
+	 当我们将多个流组件传递到`GraphDSL.create(...)`其中时，生活会变得更加有趣。在这种情况下，图形具有多个物化值。这当然是无效的。因此，我们需要传入另一个闭包, 名为`combineMat`。该匿名函数将`combineMat`采用*n*个参数，其中*n*是传入的流阶段数。然后，输出是基于组合输入的物化值参数的物化值。这允许并强制开发人员定义如何从所讨论的多个值中产生最终的物化值。最简单的情况是创建一个元组以返回每个物化值作为结果的一部分。
+	 `GraphDSL.create`的最后一个参数是生成器匿名函数。这是一个分层的匿名函数，第一个以`builder`作为参数。我们需要标记此构建器为`implicit`以在下面的图中进一步使用。`GraphDSL.create`中的下一个匿名函数采用传入到的流阶段的导入版本。例如，如果您传递了3个阶段，则在此lambda中将有3个输入代表这些导入的阶段。这些将用于组成流图。在这种情况下，out表示sum传入。
+The next lambda in takes an imported version of the stream stages passed into `GraphDSL.create`. For instance, if you have 3 stages passed in, you'll have 3 inputs in this lambda representing those imported stages. These will be used to compose the stream graph. In this case the `out` represents the `sum` passed in.
    
-3. `builder.add(...)` calls. Every non-linear stream stage not passed in (and hence no materialized value captured) can be made available to the composition by passing it to the `builder.add(...)` calls. Linear stages from outside this block are added implicitly so we have to only worry about our non-linear stages. 
-4. The graph composition. We go through all the trouble just for this alone. This is where you describe how the stages/components connect to each others.
+3. `builder.add(...)`调用。每一个没有传入的非线性流阶段(因此也不会捕获任何物化值)，通过将其传入`builder.add(...)`调用，就可用于合成。来自此块外部的线性级被隐式添加，因此我们只需要担心非线性级。
 
-5. The return value. These need to match the type of graph you're composing. Depending on the type of composition, you want to return the relevant shape for that composition. Here is the return value for common stage types:
+4. 图形组合。我们经历了所有的麻烦，就为了这个。在这里您将描述阶段/组件之间如何相互连接。
+
+5. 返回值。这些需要与您要组合的图的类型匹配。根据组合的类型，你想要返回组合的相关形状。这是常见阶段类型的返回值：
 
    | Type            | Return value                          |
    | --------------- | ------------------------------------- |
@@ -251,7 +252,7 @@ The `GraphDSL` block looks a little fuzzy, but well worth it when it comes to th
    | `Flow`          | `FlowShape(inputPort, outputPort)` |
 
 
-Enough said. Lets get some code going. We'll create a new Scala class that looks very much like our `PaymentStreamActor`. Lets call it `PaymentGraphActor`:
+说的够多了。让我们进行一些代码。我们将创建一个新Scala类，非常类似于我们的`PaymentStreamActor`。让我们称之为`PaymentGraphActor`：
 
 ```scala
 import akka.actor.{Actor, ActorLogging}
@@ -296,7 +297,7 @@ class PaymentGraphActor extends Actor with ActorLogging {
 }
 ```
 
-And for that, we also create the test `PaymentGraphSpec` class:
+为此，我们还创建了测试`PaymentGraphSpec`类：
 
 ```scala
 import akka.actor.{ActorSystem, Props}
@@ -317,11 +318,11 @@ class PaymentGraphSpec extends TestKit(ActorSystem("PaymentGraphSpec"))
 }
 ```
 
-### `BidiFlow` - Bidirectional Flows
+### `BidiFlow` - 双向流
 
-In many cases, it is useful to model a stream or stream component as bidirectional flows. More commonly, protocol stacks can be modeled as bidirectional flows. Even the squbs pipeline in 0.9 is modeled as a set of `BidiFlow`s stacked on top of each others.
+在许多情况下，将流或流组件建模为双向流很有用。更常见的是，协议栈可以建模为双向流。甚至0.9中的squbs管道也被建模为一组`BidiFlow`，堆叠在一起。
 
-###### Anatomy of a `BidiFlow`
+###### 解剖一个`BidiFlow`
 
 ```scala
         +------+
@@ -331,7 +332,7 @@ In many cases, it is useful to model a stream or stream component as bidirection
         +------+
 ```
 
-###### Stacking of `BidiFlow`s
+###### 叠加的`BidiFlow`
 
 ```scala
        +-------+  +-------+  +-------+
@@ -343,12 +344,12 @@ In many cases, it is useful to model a stream or stream component as bidirection
        bidi1.atop(bidi2).atop(bidi3);
 ```
 
-But, the `BidiFlow` is not only useful for "literally" bidirectional flows. In some cases we need to gate off a part of the flow with a single entry and exit point of control at those places. `BidiFlow`s are extremely useful in such cases. The following squbs flow components are `BidiFlow`s:
+但是，`BidiFlow`不仅对"literally"双向流有用。在某些情况下，我们需要在这些位置使用单个入口和出口点来控制关闭一部分流程。`BidiFlow`在这种情况下非常有用。以下squbs流组件是`BidiFlow`：
 
 * TimeoutBidiFlow
 * CircuitBreakerBidi
 
-As we can see, these stages fend off a section of the stream to test whether a message passed through that stream part in timely or not, in error or not. It also has the capability to short circuit the flow with alternatives paths (like timeout messages) at its entry/exit point as can be seen in the following sample:
+如我们所见，这些阶段避开了一部分流，以测试消息通过流的一部分，是否及时、是否错误。它还具有短路的能力，通过在其入口/出口点选择路径(例如超时消息)，如以下示例所示：
 
 ```scala
        +---------+  +------------+
@@ -360,23 +361,23 @@ As we can see, these stages fend off a section of the stream to test whether a m
        timeout.join(processing);
 ```
 
-Here, timeout is a `BidiFlow` where processing is just a regular flow stage (or combination of flow stages). The arrow is just pointed backwards to make it connect. It only has one input and one output port.
+在这里，timeout是一个`BidiFlow`，这里的processing仅是常规流阶段(或流阶段的组合)。箭头只是指向后面，使它连接起来。它只有一个输入和一个输出端口。
 
-### Stream Stages
+### 流阶段
 
-So far we have shown only a few most common stages, such as `Flow.map`, `Flow.filter`, `Broadcast`, `Merge`, etc. Akka Streams comes with a multitude of stages. Lets point your browser to [Overview of built-in stages and their semantics](https://doc.akka.io/docs/akka/current/stream/operators/index.html?language=scala) and look at some of the many stages provided by Akka.
+到目前为止，我们只给出了少数几个最常见的阶段，如`Flow.map`，`Flow.filter`，`Broadcast`，`Merge`等，Akka流有许多阶段。众说纷纭。让您的浏览器指向[内置阶段及其语义的概述](https://doc.akka.io/docs/akka/current/stream/operators/index.html?language=scala)，并查看Akka提供的许多阶段中的某些阶段。
 
-If the Akka-provided stages are not adequate, there are more stages provided as part of [Alpakka](https://developer.lightbend.com/docs/alpakka/current/). squbs (listed in the Alpakka catalog) also provides several interesting stream stages:
+如果Akka提供的阶段不够多，则[Alpakka](https://developer.lightbend.com/docs/alpakka/current/)会提供更多阶段。squb(在Alpakka目录中列出)还提供了几个有趣的流阶段：
 
-* PersistentBuffer (with and without commit stage)
-* BroadcastBuffer (with and without commit stage)
+* PersistentBuffer (带有和不带有提交阶段)
+* BroadcastBuffer (有和没有提交阶段)
 * Timeout
 * CircuitBreaker
 
-#### Custom Stages
+#### 自定义阶段
 
-If stages we can find still do not fit requirements, we can build our own stage. This is documented at [Custom stream processing](https://doc.akka.io/docs/akka/current/stream/stream-customize.html?language=scala). Since testing and qualification of custom stream stages are pretty elaborate, plese engage the squbs team. Also, if you think your requirements are more generic than just your use case, squbs always welcomes your contributions!
+如果我们发现阶段仍然不符合要求，则可以构建自己的阶段。[自定义流处理](https://doc.akka.io/docs/akka/current/stream/stream-customize.html?language=scala)中对此进行了记录。由于自定义流阶段的测试和资格鉴定非常复杂，因此，请让squbs团队参与其中。另外，如果您认为您的需求比用例更通用，那么squbs总是欢迎您的贡献！
 
 ### Stream Cookbook
 
-For ideas how to satisfy your requirements with Streams, the [Streams Cookbook](https://doc.akka.io/docs/akka/current/stream/stream-cookbook.html?language=scala) is an invaluable resource to get your ideas.
+对于如何使用Streams满足您的要求的想法，[Streams Cookbook](https://doc.akka.io/docs/akka/current/stream/stream-cookbook.html?language=scala)是获取您的想法的宝贵资源。

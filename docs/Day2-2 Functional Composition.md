@@ -1,14 +1,14 @@
-## Day 2: Functional Composition
+## Day 2: 功能组合
 
-### Container Types
-* We deal with container types every day: `List[T]`, `Set[T]`
-* Even an array is an `Array[T]`
-* Common container types we will need: `Option[T]`, `Future[T]`
-* A `List[T]` or `Set[T]` contains 0 or more elements
-* You can think of an `Option[T]` as a collection containing 0 (empty) or 1 element. `Option[T]` has two subtypes: `Some[T]` or `None`
-* A `Future[T]` contains an element or an error that may be filled in the future.
+### 容器类型
+* 我们每天处理的容器类型: `List[T]`, `Set[T]`
+* 即使数组是一个`Array[T]`
+* 常用的容器类型，我们将需要: `Option[T]`, `Future[T]`
+* 一个`List[T]`或`Set[T]`包含0或多个元素
+* 你可以认为`Option[T]`是包含0个(空)或一个元素的容器. `Option[T]`有两个子类型: `Some[T]`或`None`
+* 一个`Future[T]`包含一个元素或一个错误，其在将来填充到结果中。
 
-### Transformation, like how we used to do it in Java
+### 转换, 就像我们以前用Java做的那样
 
 ```scala
   def intListToString(intList: List[Int]): List[String] = {
@@ -20,44 +20,44 @@
   }
 ```
 
-### No! We can do better!
-* Given a `List[Int]` and a function that transforms `Int` => `String`, we should be able to apply this transformation to the whole `List` in one shot.
+### 不! 我们可以做得更好！
+* 给定一个`List[Int]`和一个可以转换`Int` => `String`的函数，我们应该能够一次将这一转换应用于整个`List`。
 
-Lets take a brief look at some Scala code (easier to understand):
+让我们大致看一下这些Scala代码(更容易理解)：
 
 ```scala
 def intListToString(intList: List[Int]) = intList.map(i => "count: " + i)
 ```
 
-So this converts a `List(1, 2, 3)` to a `List("count: 1", "count: 2", "count: 3")`.
+这将一个`List(1, 2, 3)`转换为一个`List("count: 1", "count: 2", "count: 3")`。
 
-### Some theory on `map` operation
+### `map`操作的一些原理
 
-* `List`, `Set`, etc. are container types.
-* Lets container type: `C` and the elements inside the container type: `E`.
-* We can now say that container is of type `C[E]`
-* If we apply a function of type `E => F`, the result will be of type `C[F]`
-* This application is called the `map` operation.
-* So: `C[E].map(E => F) =>> C[F]`
+* `List`, `Set`等是容器类型。
+* 让容器类型: `C`和容器内的元素类型: `E`。
+* 现在我们可以说容器是类型`C[E]`
+* 如果应用一个`E => F`类型的函数, 则结果将为`C[F]`类型
+* 此应用程序称为`map`操作。
+* 所以: `C[E].map(E => F) =>> C[F]`
 
-This should be easy!
+这应该很容易！
 
-### Compose using `flatMap`
+### 组合使用`flatMap`
 
-* For type `C[E]`, if we apply function `E -> C<F>`, what will we get?
-* More concrete example: If we have `List[String]` and a function `String => List[Char]` i.e. split the `String` into a list of characters, what will a `map` operation do?
-* Answer, `List[List[Character]]`
-* Or `C[C[F]]` based on our notation
-* So what if we want a list of all characters in all strings? We have to `flatten` it.
-* Here's where `flatMap` comes in handy.
-* So, in theory: `C[E].flatMap(E => C[F]) =>> C[F]`
-* We flatMap the container `C[E]` with a container type `C[F]` and get a new combined result of type `C[F]`.
+* 对于`C[E]`类型，假如我们应用一个函数`E -> C<F>`，将会得到什么？
+* 更具体的例子: 假如我们有`List[String]`和一个函数`String => List[Char]` 即将`String`分割成一个字符列表, 那么`map`操作将怎么做？
+* 答案是, `List[List[Character]]`
+* 或`C[C[F]]`根据我们的符号
+* 那么，假如我们想要所有字符串的字符列表怎么办？我们必须`flatten`它。
+* 这`flatMap`是派上用场的地方。
+* 因此，理论上: `C[E].flatMap(E => C[F]) =>> C[F]`
+* 我们使用一个容器类型`C[F]`，扁平映射(flatMap)容器`C[E]`，并获得一个`C[F]`类型的组合结果。
 
-Clear?
+明白?
 
-### Try to `flatMap` two lists:
+### 尝试`flatMap`两个列表:
 
-Using the Scala REPL, we can show the effects of `flatMap` vs `map` in the following examples:
+使用Scala REPL，我们可以在以下示例中显示`flatMap` vs `map`的效果：
 
 ```scala
 scala> val l1 = List("one", "two", "three")
@@ -69,26 +69,26 @@ l2: List[Char] = List(o, n, e, t, w, o, t, h, r, e, e)
 scala> val l3 = l1.map(s => s.toList)
 l3: List[List[Char]] = List(List(o, n, e), List(t, w, o), List(t, h, r, e, e))
 ```
-### Combining with `map` and `flatMap`
+### 组合`map`和`flatMap`
 
-* What if we want to operate on multiple containers together, combining them.
-* Given containers `C[E]` and `C[F]`, we want to apply a function `(E, F) => T` and get a `C[T]` out of it.
-* The combining would look like this: `C[E].flatMap(E => C[F].map(F => [(E, F) => T]))`
-* Similarly, combining `C[E]`, `C[F]`, `C[G]` applying `(E, F, G) => T` looks like this: `C[E].flatMap(E -> C[F].flatMap(F => C[G].map(G => [(E, F, G) => T])))` and gives you a `C[T]`.
+* 如果我们想对多个容器一起操作，该怎么办？将它们组合在一起。
+* 给定容器`C[E]`和`C[F]`，我们想应用一个函数`(E, F) => T`并从中获得`C[T]`。
+* 合并看起来像这样: `C[E].flatMap(E => C[F].map(F => [(E, F) => T]))`
+* 同样，应用`(E, F, G) => T`合并`C[E]`, `C[F]`, `C[G]`看起来像这样: `C[E].flatMap(E -> C[F].flatMap(F => C[G].map(G => [(E, F, G) => T])))`并给你一个`C[T]`.
 
-### Combining & Processing example with `Optional`
+### 合并&处理`Optional`示例
 
 ```scala
     def combine(o1: Option[String], o2: Option[String]): Option[String] =
       o1.flatMap(s1 => o2.map(s2 => s1 + s2))
 ```
 
-* Now try `combine(Option("Hello"), Option("World"))`
-* And try to make one or the other empty.
+* 现在尝试`combine(Option("Hello"), Option("World"))`
+* 并尝试使一个或另一个为空。
 
-### Composing using for-comprehensions
+### 组合使用for-推导式
 
-While you may have seen some use of `for` in Scala looking like a loop construct, it is actually not. For-comprehension is actually syntactic sugar to allow easier composition/combination of `map` and `flatMap` described in the previous sections. So our combine function above can be re-written like this:
+虽然您可能已经在Scala中看到了一些类似循环构造的`for`用法，但实际上并非如此。for-推导式实际上是语法糖，它允许更容易地合成/组合在前面的部分中描述的`map`和`flatMap`。所以我们上面的组合函数可以这样重写：
 
 ```scala
     def combine(o1: Option[String], o2: Option[String]): Option[String] =
@@ -98,7 +98,7 @@ While you may have seen some use of `for` in Scala looking like a loop construct
       } yield s1 + s2
 ```
 
-Yes, you spend a few more lines. But the resulting code is much more readable than the flatMap and map composition. The resulting compiled code is exactly the same. This is becoming even more apparent when you have a large number of containers to composition as can be seen in the following composition of 4 containers:
+是的，你多花了几行。但是，生成的代码比flatMap和map组合更具可读性。生成的编译代码完全相同。当您拥有大量要组合的容器时，这一点变得更加明显，如以下四个容器的组成所示：
 
 ```scala
   for {
@@ -109,19 +109,19 @@ Yes, you spend a few more lines. But the resulting code is much more readable th
   } yield s1 + s2 + s3 + s4
 ```
 
-Lets try to write this using `flatMap` and `map` and we'll clearly see how much more effort it is.
+让我们试着用这个来写`flatMap`和`map`，我们将清楚地看到这需要付出更多的努力。
 
-### Combining Futures
+### 合并Future
 
-* Why? Because you want to combine futures and not block on each or any future.
-* You need to operate on the content of the future.
-* And Future is just another container type.
-* Same composition rules applies.
+* 为什么？因为您希望合并future，而不是阻塞每个或任何future。
+* 您需要对future的内容进行操作。
+* 而Future只是另一种容器类型。
+* 适用相同的组合规则。
 
-### Using Combined Futures in Actors
+### 在Actor中使用组合Future
 
-* Async `Future` operations need to use the `pipe` operation to send an actor message to this or a different actor, without blocking. Ba careful never to block on
+* 异步`Future`操作需要使用`pipe`操作将一个actor消息发送到这个actor或另外一个actor，而不会阻塞。小心不要阻塞
 
-### Exercise:
+### 练习:
 
-Write a test case that calls `PaymentActor` by `ask` multiple times (multiple `PaymentRequests`) and combine the resulting `Future`s into a single one. Then block on this resulting `Future` to finish the test case using the `Await` call. The `Future` should contain a `List` of all results.
+写一个测试用例，由`ask`多次调用`PaymentActor`(多个`PaymentRequests`)，并将`Future`的结果组合成单独的一个。使用Await调用阻塞`Future`的结果，以完成测试用例。这个`Future`应包含一个所有结果的`List`。
